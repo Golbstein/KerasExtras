@@ -44,11 +44,11 @@ def Mean_IOU(y_true, y_pred):
     y_pred = K.reshape(y_pred, (-1, nb_classes))
     y_true = tf.to_int32(K.reshape(y_true, (-1, 1))[:,0])
     y_true = K.one_hot(y_true, nb_classes)
-    true_pixels = K.argmax(y_true, axis=-1) # exclude background
+    true_pixels = K.argmax(y_true, axis=-1)
     pred_pixels = K.argmax(y_pred, axis=-1)
     iou = []
     flag = tf.convert_to_tensor(-1, dtype='float64')
-    for i in range(nb_classes-1):
+    for i in range(nb_classes-1): # exclude last label (void)
         true_labels = K.equal(true_pixels, i)
         pred_labels = K.equal(pred_pixels, i)
         inter = tf.to_int32(true_labels & pred_labels)
