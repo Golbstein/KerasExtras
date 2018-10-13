@@ -41,19 +41,21 @@ def sparse_accuracy_ignoring_last_label(y_true, y_pred):
 
 def Mean_IOU(y_true, y_pred):
     nb_classes = K.int_shape(y_pred)[-1]
-    y_pred = K.reshape(y_pred, (-1, nb_classes))
-    true_pixels = tf.to_int32(K.reshape(y_true, (-1, 1))[:,0])
-    pred_pixels = K.argmax(y_pred, axis=-1)
+    batches = K.int_shape(y_pred)[0]
     iou = []
     flag = tf.convert_to_tensor(-1, dtype='float64')
-    for i in range(1, nb_classes-1): # exclude first (background) and last label (void)
-        true_labels = K.equal(true_pixels, i)
-        pred_labels = K.equal(pred_pixels, i)
-        inter = tf.to_int32(true_labels & pred_labels)
-        union = tf.to_int32(true_labels | pred_labels)
-        cond = K.sum(tf.to_int32(true_labels)) > 0
-        res = tf.cond(cond, lambda: K.sum(inter)/K.sum(union), lambda: flag)
-        iou.append(res)
+    true_pixels = tf.to_int64(y_true[:,:,0])
+    pred_pixels = K.argmax(y_pred, axis=-1)
+    for b in range(batches):
+        for i in range(1, nb_classes-1): # exclude first (background) and last label (void)
+            true_labels = K.equal(true_pixels[b], i)
+            pred_labels = K.equal(pred_pixels[b], i)
+            inter = tf.to_int32(true_labels & pred_labels)
+            union = tf.to_int32(true_labels | pred_labels)
+            cond = K.sum(tf.to_int32(true_labels)) > 0
+            res = tf.cond(cond, lambda: K.sum(inter)/K.sum(union), lambda: flag)
+            iou.append(res)
+            
     iou = tf.stack(iou)
     legal_labels = tf.greater(iou, flag)
     iou = tf.gather(iou, indices=tf.where(legal_labels))
