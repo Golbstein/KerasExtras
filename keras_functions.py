@@ -51,7 +51,7 @@ def Mean_IOU(y_true, y_pred):
         pred_labels = K.equal(pred_pixels, i)
         inter = tf.to_int32(true_labels & pred_labels)
         union = tf.to_int32(true_labels | pred_labels)
-        cond = (K.sum(union) > 0) & (K.sum(tf.to_int32(true_labels)) > 0)
+        cond = K.sum(tf.to_int32(true_labels)) > 0
         res = tf.cond(cond, lambda: K.sum(inter)/K.sum(union), lambda: flag)
         iou.append(res)
     iou = tf.stack(iou)
