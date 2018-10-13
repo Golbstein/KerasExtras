@@ -42,7 +42,6 @@ def sparse_accuracy_ignoring_last_label(y_true, y_pred):
 def Mean_IOU(y_true, y_pred):
     
     nb_classes = K.int_shape(y_pred)[-1]
-    flag = tf.convert_to_tensor(-1, dtype='float64')
     iou = []
     true_pixels = tf.to_int64(y_true[:,:,0])
     pred_pixels = K.argmax(y_pred, axis=-1)
@@ -53,12 +52,11 @@ def Mean_IOU(y_true, y_pred):
         union = tf.to_int32(true_labels | pred_labels)
         legal_batches = K.sum(tf.to_int32(true_labels), axis=1)>0
         ious = K.sum(inter, axis=1)/K.sum(union, axis=1)
-        iou_object = K.mean(tf.gather(ious, indices=tf.where(legal_batches))) # returns average IoU of the same objects
-        res = tf.cond(tf.debugging.is_nan(iou_object), lambda: flag, lambda: iou_object)
-        iou.append(res)
+        iou.append(K.mean(tf.gather(ious, indices=tf.where(legal_batches)))) # returns average IoU of the same objects
     iou = tf.stack(iou)
-    legal_labels = tf.greater(iou, flag)
+    legal_labels = ~tf.debugging.is_nan(iou)
     iou = tf.gather(iou, indices=tf.where(legal_labels))
+    
     return K.mean(iou)
 
 def get_available_gpus():
