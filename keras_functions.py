@@ -11,41 +11,38 @@ def random_crop(img, mask, random_crop_size):
 def foreground_sparse_accuracy(y_true, y_pred):
     nb_classes = K.int_shape(y_pred)[-1]
     y_pred = K.reshape(y_pred, (-1, nb_classes))
-    y_true = tf.to_int32(K.reshape(y_true, (-1, 1))[:,0])
-    y_true = K.one_hot(y_true, nb_classes+1)
-    unpacked = tf.unstack(y_true, axis=-1)
-    legal_labels = tf.cast(unpacked[-1], tf.bool) | tf.cast(unpacked[0], tf.bool)
-    true_pixels = K.argmax(y_true, axis=-1) # exclude background
+    y_true = K.reshape(y_true, (-1, nb_classes))
     pred_pixels = K.argmax(y_pred, axis=-1)
-    return K.sum(tf.to_float(~legal_labels & K.equal(true_pixels, pred_pixels))) / K.sum(tf.to_float(legal_labels))
+    true_pixels = K.argmax(y_true, axis=-1)
+    unpacked = tf.unstack(y_true, axis=-1)
+    legal_labels = tf.cast(unpacked[0], tf.bool) | K.greater(K.sum(y_true, axis=-1), 0)
+    return K.sum(tf.to_float(~legal_labels & K.equal(true_pixels, pred_pixels))) / K.sum(tf.to_float(~legal_labels))
 
 def background_sparse_accuracy(y_true, y_pred):
     nb_classes = K.int_shape(y_pred)[-1]
     y_pred = K.reshape(y_pred, (-1, nb_classes))
+    y_true = K.reshape(y_true, (-1, nb_classes))
     pred_pixels = K.argmax(y_pred, axis=-1)
-    true_pixels = tf.to_int64(K.reshape(y_true, (-1, 1))[:,0])
-    legal_labels = K.equal(true_pixels, 0)
+    true_pixels = K.argmax(y_true, axis=-1)
+    legal_labels = K.greater(K.sum(y_true, axis=-1), 0)
     return K.sum(tf.to_float(legal_labels & K.equal(true_pixels, pred_pixels))) / K.sum(tf.to_float(legal_labels))
 
 def sparse_accuracy_ignoring_last_label(y_true, y_pred):
     nb_classes = K.int_shape(y_pred)[-1]
     y_pred = K.reshape(y_pred, (-1, nb_classes))
-    y_true = K.one_hot(tf.to_int32(K.flatten(y_true)),
-                       nb_classes + 1)
-    unpacked = tf.unstack(y_true, axis=-1)
-    legal_labels = ~tf.cast(unpacked[-1], tf.bool)
-    y_true = tf.stack(unpacked[:-1], axis=-1)
+    y_true = K.reshape(y_true, (-1, nb_classes))
+    legal_labels = K.greater(K.sum(y_true, axis=-1), 0)
     return K.sum(tf.to_float(legal_labels & K.equal(K.argmax(y_true, axis=-1),
                                                     K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels))
 
 def Mean_IOU(y_true, y_pred):
     nb_classes = K.int_shape(y_pred)[-1]
     iou = []
-    true_pixels = tf.to_int64(y_true[:,:,0])
+    true_pixels = K.argmax(y_true, axis=-1)
     pred_pixels = K.argmax(y_pred, axis=-1)
-    void_labels = K.equal(true_pixels, nb_classes)
-    for i in range(0, nb_classes): # exclude last label (void)
-        true_labels = K.equal(true_pixels, i)
+    void_labels = K.equal(K.sum(y_true, axis=-1), 0)
+    for i in range(0, nb_classes): # exclude first label (background) and last label (void)
+        true_labels = K.equal(true_pixels, i) & ~void_labels
         pred_labels = K.equal(pred_pixels, i) & ~void_labels
         inter = tf.to_int32(true_labels & pred_labels)
         union = tf.to_int32(true_labels | pred_labels)
