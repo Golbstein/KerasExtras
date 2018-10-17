@@ -15,7 +15,7 @@ def foreground_sparse_accuracy(y_true, y_pred):
     pred_pixels = K.argmax(y_pred, axis=-1)
     true_pixels = K.argmax(y_true, axis=-1)
     unpacked = tf.unstack(y_true, axis=-1)
-    legal_labels = tf.cast(unpacked[0], tf.bool) | K.greater(K.sum(y_true, axis=-1), 0)
+    legal_labels = tf.cast(unpacked[0], tf.bool) | ~K.greater(K.sum(y_true, axis=-1), 0)
     return K.sum(tf.to_float(~legal_labels & K.equal(true_pixels, pred_pixels))) / K.sum(tf.to_float(~legal_labels))
 
 def background_sparse_accuracy(y_true, y_pred):
@@ -23,8 +23,8 @@ def background_sparse_accuracy(y_true, y_pred):
     y_pred = K.reshape(y_pred, (-1, nb_classes))
     y_true = K.reshape(y_true, (-1, nb_classes))
     pred_pixels = K.argmax(y_pred, axis=-1)
-    true_pixels = K.argmax(y_true, axis=-1)
-    legal_labels = K.greater(K.sum(y_true, axis=-1), 0)
+    true_pixels = K.argmax(y_true, axis=-1) 
+    legal_labels = K.greater(K.sum(y_true, axis=-1), 0) & K.equal(true_pixels, 0)
     return K.sum(tf.to_float(legal_labels & K.equal(true_pixels, pred_pixels))) / K.sum(tf.to_float(legal_labels))
 
 def sparse_accuracy_ignoring_last_label(y_true, y_pred):
