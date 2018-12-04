@@ -35,6 +35,28 @@ def sparse_accuracy_ignoring_last_label(y_true, y_pred):
     return K.sum(tf.to_float(legal_labels & K.equal(K.argmax(y_true, axis=-1),
                                                     K.argmax(y_pred, axis=-1)))) / K.sum(tf.to_float(legal_labels))
 
+def sparse_crossentropy_ignoring_last_label(y_true, y_pred):
+    nb_classes = K.int_shape(y_pred)[-1]
+    y_true = K.one_hot(tf.to_int32(y_true[:,:,0]), nb_classes+1)[:,:,:-1]
+    return K.categorical_crossentropy(y_true, y_pred)
+
+def sparse_Mean_IOU(y_true, y_pred):
+    nb_classes = K.int_shape(y_pred)[-1]
+    iou = []
+    pred_pixels = K.argmax(y_pred, axis=-1)
+    for i in range(0, nb_classes): # exclude first label (background) and last label (void)
+        true_labels = K.equal(y_true[:,:,0], i)
+        pred_labels = K.equal(pred_pixels, i)
+        inter = tf.to_int32(true_labels & pred_labels)
+        union = tf.to_int32(true_labels | pred_labels)
+        legal_batches = K.sum(tf.to_int32(true_labels), axis=1)>0
+        ious = K.sum(inter, axis=1)/K.sum(union, axis=1)
+        iou.append(K.mean(tf.gather(ious, indices=tf.where(legal_batches)))) # returns average IoU of the same objects
+    iou = tf.stack(iou)
+    legal_labels = ~tf.debugging.is_nan(iou)
+    iou = tf.gather(iou, indices=tf.where(legal_labels))
+    return K.mean(iou)
+
 def Mean_IOU(y_true, y_pred):
     nb_classes = K.int_shape(y_pred)[-1]
     iou = []
