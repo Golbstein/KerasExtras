@@ -2,6 +2,7 @@
 
 Keras functions that you've always wanted!
 
+* **BatchNormalization that supports float16!**
 * Random cropping for augmentation
 * Foreground sparse accuracy metric (if backgroud is set to '0')
 * Background spare accuracy (if backgroud is set to '0')
