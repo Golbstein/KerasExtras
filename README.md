@@ -1,4 +1,4 @@
-# KerasExtras
+# KerasExtras (Keras==2.2.4)
 
 Keras functions that you've always wanted!
 
