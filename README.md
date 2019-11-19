@@ -1,4 +1,4 @@
-# KerasExtras (Keras==2.2.4)
+# KerasExtras (Keras==2.2.4) with Tensorflow 2 support
 
 Keras functions that you've always wanted!
 
